@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Corona de Hierro: Edición Educativa</title>
+    <!-- React y ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel para JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fuentes -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Lato', sans-serif; background-color: #0c0a09; color: #e7e5e4; }
+        h1, h2, h3, .medieval-font { font-family: 'Cinzel', serif; }
+        
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .stage-transition { animation: slideUp 0.8s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .btn-option { transition: all 0.2s; }
+        .btn-option:active { transform: scale(0.98); }
+        .btn-option:hover { transform: translateX(5px); border-color: #eab308; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- CONFIGURACIÓN DE ETAPAS ---
+        const STAGES = {
+            1: {
+                id: 1,
+                name: "Alta Edad Media",
+                period: "Siglos IX - XI",
+                theme: "Tiempos de Inseguridad",
+                color: "text-red-500",
+                bg: "bg-red-950",
+                objective: "Sobrevivir cediendo poder. (Tu Autoridad bajará, la de los Nobles subirá).",
+                introText: "El Imperio Romano cayó hace siglos. Europa es un lugar peligroso. No hay comercio, apenas hay monedas y los caminos están llenos de bandidos. Como Rey, tu deber es proteger a tu pueblo, pero no tienes recursos. Tendrás que pedir favores que te saldrán caros."
+            },
+            2: {
+                id: 2,
+                name: "Plena Edad Media",
+                period: "Siglos XI - XIII",
+                theme: "El Renacer de las Ciudades",
+                color: "text-blue-400",
+                bg: "bg-blue-950",
+                objective: "Acumular ORO (> 50 monedas). Busca nuevos aliados fuera de la nobleza.",
+                introText: "Las invasiones han parado. Los campesinos producen más comida de la que necesitan y empiezan a venderla. En los cruces de caminos nacen nuevas ciudades (Burgos). Aparece gente nueva que no reza ni lucha, sino que comercia: la Burguesía."
+            },
+            3: {
+                id: 3,
+                name: "Baja Edad Media",
+                period: "Siglos XIV - XV",
+                theme: "Hacia el Estado Moderno",
+                color: "text-yellow-500",
+                bg: "bg-yellow-950",
+                objective: "Centralizar el Poder (Autoridad > 80). Recupera lo que es tuyo.",
+                introText: "Llegan tiempos duros: la Peste Negra y guerras largas. Pero tú has ahorrado oro. Ya no necesitas pedir favor a los nobles traicioneros; ahora puedes pagar a tu propio ejército y someterlos bajo tu ley."
+            }
+        };
+
+        // --- EVENTOS DEL JUEGO CON CONTEXTO AMPLIADO ---
+        const EVENTS = [
+            // --- ETAPA 1: ALTA EDAD MEDIA ---
+            {
+                stage: 1,
+                year: 850,
+                title: "El Terror del Norte (Vikingos)",
+                context: "Estás en tu castillo. Llegan mensajeros aterrados: barcos con cabeza de dragón (vikingos) están quemando las aldeas de la costa. Tu ejército personal es muy pequeño y tardaría semanas en llegar.",
+                dilemma: "Los Duques locales tienen soldados cerca, pero no mueven un dedo gratis. ¿Qué haces?",
+                options: [
+                    {
+                        text: "Luchar solo con mi guardia real",
+                        type: "gameover",
+                        feedback: "Tu pequeño ejército es aplastado por miles de vikingos. Al ver tu debilidad, los nobles te destronan.",
+                        reason: "DERROTA MILITAR (El Rey era débil sin los nobles)"
+                    },
+                    {
+                        text: "Pagar a mercenarios profesionales",
+                        type: "gameover",
+                        feedback: "Los mercenarios te miran extrañados. '¿Pagar? ¿Con qué?'. En esta época casi no hay monedas de oro circulando. Se van.",
+                        reason: "ERROR HISTÓRICO (Economía no monetaria)"
+                    },
+                    {
+                        text: "Pedir ayuda al Duque a cambio de tierras",
+                        type: "continue",
+                        feedback: "El Duque acepta defender la costa, pero a cambio se queda esas tierras como su FEUDO. Ahora él manda allí, no tú.",
+                        effect: { king: -20, nobles: 30, gold: 0 }
+                    }
+                ]
+            },
+            {
+                stage: 1,
+                year: 900,
+                title: "Campesinos Indefensos",
+                context: "El reino es un caos. Bandidos y lobos atacan a los campesinos que trabajan la tierra. Vienen a tu puerta pidiendo muros y protección, o morirán de hambre.",
+                dilemma: "No tienes dinero para construir murallas en cada pueblo. Los nobles ofrecen protegerlos en sus castillos, pero piden algo a cambio.",
+                options: [
+                    {
+                        text: "Crear una 'Policía Nacional'",
+                        type: "gameover",
+                        feedback: "Imposible. No tienes funcionarios, ni carreteras, ni dinero para pagar sueldos a policías en todo el reino.",
+                        reason: "ANACRONISMO (El Estado Moderno aún no existe)"
+                    },
+                    {
+                        text: "No hacer nada",
+                        type: "gameover",
+                        feedback: "Los campesinos mueren o huyen. Sin nadie que cultive el trigo, tu corte muere de hambre. Fin de la dinastía.",
+                        reason: "COLAPSO ECONÓMICO"
+                    },
+                    {
+                        text: "Convertirlos en Siervos (Servidumbre)",
+                        type: "continue",
+                        feedback: "Firmas el pacto: Los campesinos pierden su libertad y trabajan gratis para el noble. A cambio, el noble les deja entrar en su castillo si hay peligro.",
+                        effect: { king: -10, nobles: 20, gold: 0 }
+                    }
+                ]
+            },
+            
+            // --- ETAPA 2: PLENA EDAD MEDIA ---
+            {
+                stage: 2,
+                year: 1150,
+                title: "El Nacimiento del Mercado",
+                context: "Hay paz y sobra comida. En un cruce de caminos, artesanos y comerciantes han montado un mercado permanente. ¡Están ganando dinero!",
+                dilemma: "Esa nueva ciudad (Burgo) está en tierras de un Conde. El Conde quiere cobrarles impuestos abusivos. Los burgueses te piden ayuda a ti, el Rey.",
+                options: [
+                    {
+                        text: "Prohibir el mercado (es pecado)",
+                        type: "gameover",
+                        feedback: "Tu reino se queda pobre y atrasado mientras los vecinos se enriquecen. Los comerciantes se van a otro reino.",
+                        reason: "ERROR ESTRATÉGICO"
+                    },
+                    {
+                        text: "No hacer nada (que el Conde decida)",
+                        type: "continue",
+                        feedback: "El Conde les cobra impuestos y se hace riquísimo. Tú no ves ni una moneda y el Conde es cada vez más fuerte.",
+                        effect: { king: -5, nobles: 15, gold: 5 } // Poco oro
+                    },
+                    {
+                        text: "Dar una 'Carta Puebla' (Libertad)",
+                        type: "continue",
+                        feedback: "Declaras que la ciudad es libre y solo responde ante el Rey. El Conde se enfada, pero los burgueses te pagan impuestos a TI.",
+                        effect: { king: 10, nobles: -10, gold: 30 } // Mucho oro
+                    }
+                ]
+            },
+            {
+                stage: 2,
+                year: 1212,
+                title: "Necesitas Dinero Urgente",
+                context: "Quieres recuperar territorios perdidos, pero la guerra es cara. Has llamado a los Nobles y a la Iglesia, pero dicen que ellos pagan con 'sangre y oraciones', no con dinero.",
+                dilemma: "¿A quién puedes acudir para conseguir financiación rápida?",
+                options: [
+                    {
+                        text: "Robar las tierras a la Iglesia",
+                        type: "gameover",
+                        feedback: "El Papa te excomulga. Tus súbditos dejan de obedecerte porque 'ya no eres un rey cristiano'.",
+                        reason: "EXCOMUNIÓN"
+                    },
+                    {
+                        text: "Insistir a los Nobles",
+                        type: "continue",
+                        feedback: "Te dan migajas y consejos inútiles. Sigues sin fondos para tu campaña.",
+                        effect: { king: 0, nobles: 10, gold: 0 }
+                    },
+                    {
+                        text: "Llamar a las Ciudades a las Cortes",
+                        type: "continue",
+                        feedback: "Invitas a los representantes de las ciudades (Tercer Estado). Te dan el oro que necesitas a cambio de tener voto en las Cortes.",
+                        effect: { king: 15, nobles: -5, gold: 35 }
+                    }
+                ]
+            },
+
+            // --- ETAPA 3: BAJA EDAD MEDIA ---
+            {
+                stage: 3,
+                year: 1348,
+                title: "La Peste Negra",
+                context: "Una enfermedad terrible ha matado a 1 de cada 3 personas. Faltan manos para trabajar. Los nobles están perdiendo dinero porque no tienen quien coseche sus campos.",
+                dilemma: "Los nobles te exigen que firmes una ley ('Malos Usos') para atar a los campesinos a la tierra como esclavos y que no puedan irse a las ciudades.",
+                options: [
+                    {
+                        text: "Ignorar la enfermedad",
+                        type: "gameover",
+                        feedback: "La peste entra en palacio por falta de medidas. Mueres. Fin de la partida.",
+                        reason: "MUERTE POR PESTE"
+                    },
+                    {
+                        text: "Apoyar a los Nobles (Malos Usos)",
+                        type: "continue",
+                        feedback: "Ayudas a los nobles a oprimir a los campesinos. Evitas su ruina, pero pierdes la oportunidad de debilitarlos.",
+                        effect: { king: -20, nobles: 20, gold: 0 }
+                    },
+                    {
+                        text: "Proteger a los campesinos",
+                        type: "continue",
+                        feedback: "Te niegas. Los nobles se arruinan por falta de trabajadores. Tú te presentas como el Rey Justiciero y ganas autoridad.",
+                        effect: { king: 25, nobles: -20, gold: -10 }
+                    }
+                ]
+            },
+            {
+                stage: 3,
+                year: 1492,
+                title: "El Duelo Final",
+                context: "El Duque de la Frontera, el noble más poderoso, se ha rebelado. Dice que no te reconoce como autoridad. Se ha encerrado en su castillo.",
+                dilemma: "Es el momento de la verdad. Tienes las arcas llenas de oro de las ciudades. ¿Cómo acabas con esta rebelión?",
+                options: [
+                    {
+                        text: "Retarle a un combate singular",
+                        type: "gameover",
+                        feedback: "Él es un guerrero experto. Tú eres un político. Te mata en dos segundos.",
+                        reason: "ERROR DE JUICIO"
+                    },
+                    {
+                        text: "Pedir ayuda a otros nobles",
+                        type: "continue",
+                        feedback: "Los otros nobles te ayudan, pero ahora les debes favores a ellos. Sigues siendo un 'Rey Feudal', atado a pactos.",
+                        effect: { king: -10, nobles: 20, gold: 0 }
+                    },
+                    {
+                        text: "Crear el Ejército Real (Artillería)",
+                        type: "continue",
+                        feedback: "Usas tu ORO. Contratas artilleros y un ejército permanente. Tus cañones destrozan sus murallas. Nadie puede oponerse a ti.",
+                        effect: { king: 50, nobles: -50, gold: -50 }
+                    }
+                ]
+            }
+        ];
+
+        function App() {
+            const [currentStageId, setCurrentStageId] = useState(0); 
+            const [eventIndex, setEventIndex] = useState(0);
+            const [showTransition, setShowTransition] = useState(false);
+            const [gameStatus, setGameStatus] = useState("playing"); 
+            const [gameOverReason, setGameOverReason] = useState("");
+            
+            const [stats, setStats] = useState({ king: 50, nobles: 30, gold: 0 });
+            const [feedback, setFeedback] = useState(null);
+
+            const stageEvents = EVENTS.filter(e => e.stage === currentStageId);
+            const currentEvent = stageEvents[eventIndex];
+
+            // Iniciar juego
+            const startGame = () => {
+                setCurrentStageId(1);
+                setEventIndex(0);
+                setStats({ king: 60, nobles: 20, gold: 0 }); 
+                setShowTransition(true);
+                setGameStatus("playing");
+            };
+
+            const handleChoice = (option) => {
+                if (option.type === "gameover") {
+                    setGameStatus("lost");
+                    setGameOverReason(option.reason + ": " + option.feedback);
+                    return;
+                }
+
+                const newStats = {
+                    king: Math.max(0, Math.min(100, stats.king + (option.effect.king || 0))),
+                    nobles: Math.max(0, Math.min(100, stats.nobles + (option.effect.nobles || 0))),
+                    gold: Math.max(0, stats.gold + (option.effect.gold || 0))
+                };
+                setStats(newStats);
+                setFeedback(option.feedback);
+            };
+
+            const nextEvent = () => {
+                setFeedback(null);
+                if (eventIndex + 1 < stageEvents.length) {
+                    setEventIndex(eventIndex + 1);
+                } else {
+                    checkStageCompletion();
+                }
+            };
+
+            const checkStageCompletion = () => {
+                if (currentStageId === 1) {
+                    if (stats.nobles > stats.king || stats.king < 50) {
+                        setCurrentStageId(2);
+                        setEventIndex(0);
+                        setShowTransition(true);
+                    } else {
+                        setGameStatus("lost");
+                        setGameOverReason("FRACASO HISTÓRICO: Intentaste mantener todo el poder sin tener recursos. Los nobles se unieron y te asesinaron por tirano.");
+                    }
+                } 
+                else if (currentStageId === 2) {
+                    if (stats.gold >= 50) {
+                        setCurrentStageId(3);
+                        setEventIndex(0);
+                        setShowTransition(true);
+                    } else {
+                        setGameStatus("lost");
+                        setGameOverReason("QUIEBRA: No te aliaste suficiente con la burguesía. Sin oro, no puedes pagar el ejército que necesitas para la fase final.");
+                    }
+                } 
+                else if (currentStageId === 3) {
+                    if (stats.king > 80 && stats.king > stats.nobles) {
+                        setGameStatus("won");
+                    } else {
+                        setGameStatus("lost");
+                        setGameOverReason("REY DÉBIL: Sobreviviste, pero los nobles siguen siendo poderosos. Tu reino sigue fragmentado y no creaste un Estado Moderno.");
+                    }
+                }
+            };
+
+            // PANTALLA INICIO
+            if (currentStageId === 0) {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')]">
+                        <div className="max-w-2xl border-4 border-yellow-700 p-10 bg-black/90 rounded-xl shadow-2xl">
+                            <h1 className="text-5xl text-yellow-500 mb-6 font-bold tracking-wider medieval-font">LA CORONA DE HIERRO</h1>
+                            <p className="text-xl mb-4 text-stone-300 font-bold">Edición Educativa</p>
+                            <p className="text-lg mb-8 text-stone-400">
+                                ¿Serás capaz de transformar un reino medieval débil en un Estado Moderno poderoso?<br/><br/>
+                                <span className="text-red-400">OJO:</span> Lee bien el contexto. Si tomas decisiones que no son posibles en esa época (anacronismos), perderás.
+                            </p>
+                            <button onClick={startGame} className="bg-yellow-800 hover:bg-yellow-700 text-white font-bold py-4 px-8 rounded-lg text-2xl border-2 border-yellow-500 transition-transform hover:scale-105 shadow-lg">
+                                Empezar la Historia
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // GAME OVER
+            if (gameStatus === "lost") {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-red-950 p-6 text-center fade-in">
+                        <div className="max-w-xl p-8 rounded-xl border-4 border-red-700 bg-black/90 shadow-2xl">
+                            <h1 className="text-5xl font-bold text-red-600 mb-4 medieval-font">FIN DE LA PARTIDA</h1>
+                            <div className="bg-red-900/30 p-6 rounded border border-red-800 mb-6">
+                                <h3 className="text-white font-bold mb-2">CAUSA DE LA DERROTA:</h3>
+                                <p className="text-xl text-red-200">{gameOverReason}</p>
+                            </div>
+                            <button onClick={() => window.location.reload()} className="px-8 py-3 bg-stone-700 hover:bg-stone-600 text-white rounded font-bold border border-stone-500 transition-colors">
+                                Intentar de nuevo
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // VICTORIA
+            if (gameStatus === "won") {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-green-950 p-6 text-center fade-in">
+                        <div className="max-w-xl p-8 rounded-xl border-4 border-yellow-500 bg-black/90 shadow-2xl">
+                            <h1 className="text-5xl font-bold text-yellow-400 mb-4 medieval-font">¡VICTORIA!</h1>
+                            <p className="text-lg text-white mb-6 leading-relaxed">
+                                Has comprendido la evolución política de la Edad Media:<br/><br/>
+                                1. Entendiste que el Feudalismo era necesario por la falta de recursos.<br/>
+                                2. Usaste el comercio de las ciudades para enriquecerte.<br/>
+                                3. Centralizaste el poder creando un Estado Moderno.
+                            </p>
+                            <div className="flex justify-center gap-8 mb-8 text-xl font-bold text-stone-300 bg-stone-900 p-4 rounded">
+                                <div>👑 Autoridad: {stats.king}%</div>
+                                <div>💰 Oro: {stats.gold}</div>
+                            </div>
+                            <button onClick={() => window.location.reload()} className="px-8 py-3 bg-yellow-700 hover:bg-yellow-600 text-white rounded font-bold border border-yellow-500 shadow-lg transition-transform hover:scale-105">
+                                Jugar otra vez
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // TRANSICIÓN
+            if (showTransition) {
+                const stage = STAGES[currentStageId];
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-stone-900 stage-transition text-center">
+                        <div className={`max-w-3xl w-full p-10 rounded-xl shadow-2xl border-4 ${currentStageId === 1 ? 'border-red-800 bg-red-950' : currentStageId === 2 ? 'border-blue-800 bg-blue-950' : 'border-yellow-600 bg-yellow-950'}`}>
+                            <h2 className="text-sm uppercase tracking-[0.3em] text-stone-400 mb-2">Nueva Era</h2>
+                            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 medieval-font">{stage.name}</h1>
+                            <p className="text-stone-400 italic mb-6">{stage.period} - {stage.theme}</p>
+                            
+                            <div className="bg-black/40 p-6 rounded-lg mb-8 border-l-4 border-white/30 text-left">
+                                <p className="text-lg leading-relaxed text-stone-200">{stage.introText}</p>
+                            </div>
+                            
+                            <div className="flex items-center gap-4 bg-black/60 p-4 rounded mb-8 border border-white/10">
+                                <span className="text-3xl">🎯</span>
+                                <div className="text-left">
+                                    <strong className="block text-xs uppercase text-stone-500">Objetivo para pasar de etapa:</strong>
+                                    <span className="text-lg font-bold text-white">{stage.objective}</span>
+                                </div>
+                            </div>
+                            
+                            <button onClick={() => setShowTransition(false)} className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-6 rounded border border-white/30 transition-colors">
+                                Entrar en la Historia
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            const stageData = STAGES[currentStageId];
+            
+            return (
+                <div className="min-h-screen flex flex-col lg:flex-row bg-stone-900 overflow-hidden font-sans">
+                    {/* UI LATERAL (Stats) */}
+                    <div className="lg:w-80 bg-stone-950 border-b lg:border-r border-stone-800 p-6 flex flex-col gap-6 z-10 shadow-xl shrink-0">
+                        <div>
+                            <h2 className={`text-2xl font-bold medieval-font ${stageData.color}`}>{stageData.name}</h2>
+                            <p className="text-xs text-stone-500 uppercase tracking-widest">{stageData.period}</p>
+                        </div>
+                        <div className="space-y-6">
+                            {/* Barra Rey */}
+                            <div className="relative">
+                                <div className="flex justify-between text-sm mb-1 font-bold"><span className="text-yellow-500">👑 Tu Autoridad</span><span>{stats.king}%</span></div>
+                                <div className="h-4 bg-stone-800 rounded-full overflow-hidden border border-stone-700">
+                                    <div className="h-full bg-yellow-600 transition-all duration-700" style={{width: `${stats.king}%`}}></div>
+                                </div>
+                                {currentStageId === 3 && <div className="text-xs text-green-500 mt-1 text-right">Meta: >80%</div>}
+                            </div>
+                            {/* Barra Nobles */}
+                            <div>
+                                <div className="flex justify-between text-sm mb-1 font-bold"><span className="text-purple-400">⚔️ Poder Nobles</span><span>{stats.nobles}%</span></div>
+                                <div className="h-4 bg-stone-800 rounded-full overflow-hidden border border-stone-700">
+                                    <div className="h-full bg-purple-600 transition-all duration-700" style={{width: `${stats.nobles}%`}}></div>
+                                </div>
+                                {currentStageId === 1 && <div className="text-xs text-red-400 mt-1 text-right">Deben superarte</div>}
+                            </div>
+                            {/* Tesoro */}
+                            <div className={`p-4 rounded border ${currentStageId === 2 ? 'bg-blue-900/20 border-blue-500 animate-pulse' : 'bg-stone-900 border-stone-700'}`}>
+                                <div className="text-xs uppercase text-stone-500 mb-1">Tesoro Real</div>
+                                <div className="text-3xl text-yellow-400 font-bold">💰 {stats.gold}</div>
+                                {currentStageId === 2 && <div className="text-xs text-blue-300 mt-1">Meta: 50</div>}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ZONA DE JUEGO */}
+                    <div className="flex-1 relative flex flex-col justify-center items-center p-4 lg:p-12 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] overflow-y-auto">
+                        
+                        {!feedback ? (
+                            // TARJETA DE EVENTO
+                            <div className="max-w-3xl w-full bg-stone-900 border-2 border-stone-700 rounded-xl shadow-2xl overflow-hidden fade-in mb-8">
+                                <div className="bg-black/40 p-4 border-b border-stone-800 flex justify-between items-center text-xs uppercase text-stone-500 font-bold tracking-widest">
+                                    <span>Año {currentEvent.year} d.C.</span>
+                                    <span>Evento {eventIndex + 1}/{stageEvents.length}</span>
+                                </div>
+                                <div className="p-6 md:p-8">
+                                    <h2 className="text-3xl font-bold text-white mb-4 medieval-font">{currentEvent.title}</h2>
+                                    
+                                    {/* CONTEXTO PEDAGÓGICO */}
+                                    <div className="bg-stone-800/50 p-4 rounded-lg border-l-4 border-yellow-600 mb-6 text-stone-300 text-sm md:text-base">
+                                        <p className="mb-2"><strong className="text-yellow-500 uppercase text-xs tracking-wider block mb-1">Situación:</strong> {currentEvent.context}</p>
+                                        <p><strong className="text-red-400 uppercase text-xs tracking-wider block mb-1">El Dilema:</strong> {currentEvent.dilemma}</p>
+                                    </div>
+
+                                    <div className="grid gap-3">
+                                        {currentEvent.options.map((opt, idx) => (
+                                            <button key={idx} onClick={() => handleChoice(opt)} className="p-4 rounded text-left border-l-4 bg-stone-800 hover:bg-stone-700 border-stone-600 hover:border-yellow-500 text-stone-200 shadow-md btn-option group flex items-start gap-3">
+                                                <span className="text-yellow-600 opacity-50 font-bold mt-1">{String.fromCharCode(65 + idx)}.</span>
+                                                <span className="font-bold group-hover:text-yellow-400 transition-colors">{opt.text}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            // TARJETA DE CONSECUENCIA
+                            <div className="max-w-2xl w-full bg-stone-800 border-2 border-blue-500 rounded-xl shadow-2xl p-8 text-center fade-in">
+                                <h2 className="text-2xl font-bold text-blue-400 mb-6 medieval-font">Consecuencia Histórica</h2>
+                                <p className="text-xl text-white mb-8 leading-relaxed">{feedback}</p>
+                                
+                                <div className="grid grid-cols-3 gap-4 mb-8 text-sm">
+                                    <div className="bg-black/30 p-2 rounded border border-white/5">
+                                        <div className="text-stone-500 uppercase text-xs">Autoridad</div>
+                                        <div className={`font-bold ${stats.king > 40 ? "text-green-400" : "text-red-400"}`}>{stats.king}%</div>
+                                    </div>
+                                    <div className="bg-black/30 p-2 rounded border border-white/5">
+                                        <div className="text-stone-500 uppercase text-xs">Nobles</div>
+                                        <div className={`font-bold ${stats.nobles < 40 ? "text-green-400" : "text-red-400"}`}>{stats.nobles}%</div>
+                                    </div>
+                                    <div className="bg-black/30 p-2 rounded border border-white/5">
+                                        <div className="text-stone-500 uppercase text-xs">Oro</div>
+                                        <div className="text-yellow-400 font-bold">{stats.gold}</div>
+                                    </div>
+                                </div>
+
+                                <button onClick={nextEvent} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-12 rounded-full transition-transform hover:scale-105 shadow-lg border border-blue-400">
+                                    Continuar ➜
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
